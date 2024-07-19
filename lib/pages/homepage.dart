@@ -1,6 +1,7 @@
 import 'package:bukuharianv2/models/diary.dart';
 import 'package:bukuharianv2/models/diary_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,7 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   final textController = TextEditingController();
+
   DateTime selectedDate = DateTime.now();
   int selectedMonth = DateTime.now().month;
 
@@ -30,56 +32,61 @@ class _HomepageState extends State<Homepage> {
   void createDiary() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Diary Baru"),
-        content: Column(
-          children: [
-            TextField(
-              controller: textController,
-              minLines: 1,
-              maxLines: 100,
-            ),
-            const SizedBox(
-              height: 10.0,
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null) {
-                  setState(() {
-                    selectedDate = picked;
-                  });
-                }
-              },
-              child: Text(selectedDate != null
-                  ? 'Tanggal: ${DateFormat('EEE, d MMMM yyyy').format(selectedDate)}'
-                  : 'Pilih Tanggal'),
-            )
-          ],
-        ),
-        actions: [
-          MaterialButton(
-            onPressed: () {
-              //menambahkan ke db
-              context
-                  .read<DiaryDatabase>()
-                  .addDiary(textController.text, selectedDate);
+      builder: (context) {
+        DateTime localSelectedDate = selectedDate;
 
-              //membersihkan controller
-              textController.clear();
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text("Diary Baru"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: textController,
+                  minLines: 1,
+                  maxLines: 100,
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: localSelectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        localSelectedDate = picked;
+                      });
+                    }
+                  },
+                  child: Text(
+                    'Tanggal: ${DateFormat('EEE, d MMMM yyyy').format(localSelectedDate)}',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              MaterialButton(
+                onPressed: () {
+                  //menambahkan ke db
+                  context.read<DiaryDatabase>().addDiary(textController.text, localSelectedDate);
 
-              //pop dialog box
-              Navigator.pop(context);
-            },
-            child: const Text('Buat'),
+                  //membersihkan controller
+                  textController.clear();
+
+                  //pop dialog box
+                  Navigator.pop(context);
+                },
+                child: const Text('Buat'),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -103,9 +110,7 @@ class _HomepageState extends State<Homepage> {
           MaterialButton(
             onPressed: () {
               //perbarui data di db
-              context
-                  .read<DiaryDatabase>()
-                  .updateDiary(diary.id, textController.text);
+              context.read<DiaryDatabase>().updateDiary(diary.id, textController.text);
               //clear controller
               textController.clear();
               //pop dialog box
@@ -134,8 +139,7 @@ class _HomepageState extends State<Homepage> {
     final diaryDatabase = context.watch<DiaryDatabase>();
 
     //current diary
-    List<Diary> currentDiary = diaryDatabase.currentDiary
-      ..sort((a, b) => b.date.compareTo(a.date));
+    List<Diary> currentDiary = diaryDatabase.currentDiary..sort((a, b) => b.date.compareTo(a.date));
 
     // filter isi diary berdasarkan bulan
     currentDiary = filterDiaryByMonth(currentDiary, selectedMonth);
@@ -152,8 +156,7 @@ class _HomepageState extends State<Homepage> {
             items: List.generate(12, (index) => index + 1)
                 .map((month) => DropdownMenuItem<int>(
                       value: month,
-                      child: Text(
-                          DateFormat('MMMM').format(DateTime(2024, month))),
+                      child: Text(DateFormat('MMMM').format(DateTime(2024, month))),
                     ))
                 .toList(),
             onChanged: (newMonth) {
@@ -213,8 +216,7 @@ class _HomepageState extends State<Homepage> {
                   ),
                   child: ListTile(
                     title: Text(diary.text),
-                    subtitle:
-                        Text(DateFormat('EEE, d MMMM yyyy').format(diary.date)),
+                    subtitle: Text(DateFormat('EEE, d MMMM yyyy').format(diary.date)),
                   ),
                 );
               },
